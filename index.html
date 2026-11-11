@@ -1,0 +1,679 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Prioritas — Matriks Eisenhower</title>
+<meta name="theme-color" content="#111318">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<style>
+:root{
+  --bg:#f6f6f3; --panel:#ffffff; --ink:#1b1c1f; --muted:#6b6e76; --line:#e3e3de; --soft:#efefea;
+  --q1:#d9363e; --q2:#3358d4; --q3:#c98a00; --q4:#80838d; --q0:#7c5cc4;
+  --q1s:#fdecec; --q2s:#ebf0ff; --q3s:#fff6dc; --q4s:#f1f1f3; --q0s:#f2eefc;
+  --radius:14px; --shadow:0 1px 2px rgba(0,0,0,.05),0 4px 14px rgba(0,0,0,.04);
+  font-family:"Inter",system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
+}
+[data-theme=dark]{
+  --bg:#111318; --panel:#191b21; --ink:#ececef; --muted:#9a9ca6; --line:#2a2d35; --soft:#22252c;
+  --q1s:#2e1a1c; --q2s:#1a2140; --q3s:#2d2614; --q4s:#23252b; --q0s:#241e33;
+  --shadow:none;
+}
+*{box-sizing:border-box}
+html,body{margin:0;background:var(--bg);color:var(--ink);font-size:15px;line-height:1.4}
+button,input,select,textarea{font:inherit;color:inherit}
+button{cursor:pointer}
+.hidden{display:none!important}
+
+/* ---------- Layar setup & login ---------- */
+.center{min-height:100vh;display:grid;place-items:center;padding:24px}
+.box{background:var(--panel);border:1px solid var(--line);border-radius:18px;padding:28px;width:100%;max-width:420px;box-shadow:var(--shadow)}
+.box h1{margin:0 0 4px;font-size:22px}
+.box p{color:var(--muted);margin:0 0 18px;font-size:14px}
+label{display:block;font-size:13px;color:var(--muted);margin:12px 0 4px}
+input[type=text],input[type=email],input[type=password],input[type=date],select,textarea{
+  width:100%;padding:10px 12px;border:1px solid var(--line);border-radius:10px;background:var(--bg);outline:none}
+input:focus,select:focus,textarea:focus{border-color:var(--q2)}
+textarea{min-height:70px;resize:vertical}
+.btn{border:1px solid var(--line);background:var(--panel);padding:9px 14px;border-radius:10px;font-weight:500}
+.btn:hover{background:var(--soft)}
+.btn.primary{background:var(--ink);color:var(--bg);border-color:var(--ink)}
+.btn.danger{color:var(--q1);border-color:color-mix(in srgb,var(--q1) 40%,transparent)}
+.row{display:flex;gap:8px;align-items:center}
+.row.wrap{flex-wrap:wrap}
+.grow{flex:1}
+.err{color:var(--q1);font-size:13px;min-height:18px;margin-top:8px}
+
+/* ---------- Header ---------- */
+header{position:sticky;top:0;z-index:20;background:color-mix(in srgb,var(--bg) 88%,transparent);backdrop-filter:blur(10px);border-bottom:1px solid var(--line)}
+.bar{max-width:1280px;margin:0 auto;padding:10px 16px;display:flex;align-items:center;gap:12px}
+.logo{font-weight:700;font-size:17px;letter-spacing:-.2px;display:flex;align-items:center;gap:8px}
+.logo .dots{display:grid;grid-template-columns:repeat(2,7px);gap:2px}
+.logo .dots i{width:7px;height:7px;border-radius:2px;display:block}
+.tabs{display:flex;gap:2px;background:var(--soft);padding:3px;border-radius:10px;margin-left:8px}
+.tabs button{border:0;background:none;padding:6px 12px;border-radius:8px;font-size:14px;color:var(--muted)}
+.tabs button.on{background:var(--panel);color:var(--ink);box-shadow:var(--shadow)}
+.icon-btn{border:0;background:none;width:36px;height:36px;border-radius:10px;font-size:17px;display:grid;place-items:center}
+.icon-btn:hover{background:var(--soft)}
+.menu{position:absolute;right:16px;top:54px;background:var(--panel);border:1px solid var(--line);border-radius:12px;box-shadow:0 10px 30px rgba(0,0,0,.12);padding:6px;min-width:220px;z-index:30}
+.menu button{display:block;width:100%;text-align:left;border:0;background:none;padding:9px 12px;border-radius:8px}
+.menu button:hover{background:var(--soft)}
+.menu .who{padding:8px 12px;font-size:12px;color:var(--muted);border-bottom:1px solid var(--line);margin-bottom:4px;word-break:break-all}
+
+main{max-width:1280px;margin:0 auto;padding:16px}
+
+/* ---------- Tambah cepat ---------- */
+.quick{background:var(--panel);border:1px solid var(--line);border-radius:var(--radius);padding:10px;display:flex;gap:8px;align-items:center;flex-wrap:wrap;box-shadow:var(--shadow)}
+.quick input{flex:1;min-width:200px;border:0;background:transparent;padding:8px;font-size:16px}
+.chip{border:1px solid var(--line);background:var(--bg);border-radius:999px;padding:6px 12px;font-size:13px;font-weight:500;color:var(--muted)}
+.chip.on{background:var(--ink);color:var(--bg);border-color:var(--ink)}
+.dest{font-size:12px;padding:4px 10px;border-radius:999px;font-weight:600;white-space:nowrap}
+
+/* ---------- Inbox ---------- */
+.inbox{margin-top:14px;background:var(--q0s);border:1px dashed color-mix(in srgb,var(--q0) 45%,transparent);border-radius:var(--radius);padding:10px 12px}
+.inbox h3{margin:0 0 8px;font-size:13px;color:var(--q0);text-transform:uppercase;letter-spacing:.5px}
+.sortbtns{display:flex;gap:4px}
+.sortbtns button{border:0;width:30px;height:26px;border-radius:7px;font-size:11px;font-weight:700;color:#fff}
+
+/* ---------- Matriks ---------- */
+.axis{display:grid;grid-template-columns:28px 1fr 1fr;gap:12px;margin-top:16px}
+.axis .lbl{font-size:12px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:.6px;text-align:center}
+.axis .vlbl{writing-mode:vertical-rl;transform:rotate(180deg);display:flex;align-items:center;justify-content:center}
+.quad{background:var(--panel);border:1px solid var(--line);border-radius:var(--radius);min-height:260px;display:flex;flex-direction:column;box-shadow:var(--shadow);transition:outline .1s}
+.quad.over{outline:2px dashed var(--qc);outline-offset:2px}
+.quad .qh{padding:12px 14px 8px;display:flex;align-items:baseline;gap:8px;border-bottom:1px solid var(--line)}
+.quad .qh .tag{font-size:11px;font-weight:800;color:#fff;background:var(--qc);padding:2px 7px;border-radius:6px}
+.quad .qh b{font-size:15px}
+.quad .qh small{color:var(--muted);font-size:12px;margin-left:auto}
+.quad .list{padding:8px;display:flex;flex-direction:column;gap:6px;flex:1;overflow:auto;max-height:52vh}
+.empty{color:var(--muted);font-size:13px;text-align:center;padding:24px 8px}
+
+/* ---------- Kartu tugas ---------- */
+.card{display:flex;gap:10px;align-items:flex-start;background:var(--qs);border-radius:10px;padding:9px 10px;border-left:3px solid var(--qc)}
+.card[draggable=true]{cursor:grab}
+.card.dragging{opacity:.4}
+.chk{flex:none;width:20px;height:20px;border-radius:6px;border:2px solid var(--qc);background:transparent;margin-top:1px;display:grid;place-items:center;font-size:12px;color:#fff}
+.chk.on{background:var(--qc)}
+.card .body{flex:1;min-width:0;cursor:pointer}
+.card .t{font-weight:500;word-wrap:break-word}
+.card.isdone .t{text-decoration:line-through;color:var(--muted)}
+.meta{display:flex;gap:5px;flex-wrap:wrap;margin-top:4px}
+.b{font-size:11.5px;padding:1px 7px;border-radius:6px;background:var(--panel);color:var(--muted);border:1px solid var(--line);white-space:nowrap}
+.b.late{color:#fff;background:var(--q1);border-color:var(--q1)}
+.b.soon{color:var(--q1);border-color:color-mix(in srgb,var(--q1) 40%,transparent)}
+.b.promo{cursor:pointer;color:#fff;background:var(--q1);border-color:var(--q1);font-weight:600}
+.star{flex:none;border:0;background:none;font-size:17px;line-height:1;padding:2px;color:var(--muted);opacity:.55}
+.star.on{color:#e3a008;opacity:1}
+
+/* ---------- Tab kuadran (HP) ---------- */
+.qtabs{display:none;gap:6px;margin-top:14px;overflow-x:auto}
+.qtabs button{flex:1;border:1px solid var(--line);background:var(--panel);border-radius:10px;padding:8px 6px;font-size:12px;font-weight:600;white-space:nowrap}
+.qtabs button.on{color:#fff;background:var(--qc);border-color:var(--qc)}
+
+/* ---------- Tampilan daftar (Hari Ini / Selesai) ---------- */
+.section{background:var(--panel);border:1px solid var(--line);border-radius:var(--radius);padding:14px;margin-top:14px;box-shadow:var(--shadow)}
+.section h2{font-size:16px;margin:0 0 4px}
+.section .hint{color:var(--muted);font-size:13px;margin:0 0 12px}
+.stack{display:flex;flex-direction:column;gap:6px}
+.grp{font-size:12px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.5px;margin:14px 0 6px}
+
+/* ---------- Ringkasan ---------- */
+.stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px;margin-bottom:14px}
+.stat{border:1px solid var(--line);border-radius:12px;padding:12px}
+.stat .n{font-size:26px;font-weight:700}
+.stat .l{font-size:12px;color:var(--muted)}
+.hbar{display:grid;grid-template-columns:150px 1fr 44px;gap:10px;align-items:center;margin:8px 0;font-size:13px}
+.hbar .track{height:14px;background:var(--soft);border-radius:7px;overflow:hidden}
+.hbar .fill{height:100%;border-radius:7px}
+.hbar .v{text-align:right;font-variant-numeric:tabular-nums;color:var(--muted)}
+
+/* ---------- Modal ---------- */
+dialog{border:0;border-radius:18px;padding:0;width:min(520px,94vw);background:var(--panel);color:var(--ink);box-shadow:0 20px 60px rgba(0,0,0,.25)}
+dialog::backdrop{background:rgba(10,10,15,.45)}
+.mh{padding:16px 18px;border-bottom:1px solid var(--line);display:flex;align-items:center}
+.mh b{font-size:16px}
+.mb{padding:4px 18px 16px;max-height:70vh;overflow:auto}
+.mf{padding:12px 18px;border-top:1px solid var(--line);display:flex;gap:8px}
+.two{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.deleg{background:var(--q3s);border-radius:10px;padding:2px 12px 12px;margin-top:12px}
+
+.toast{position:fixed;left:50%;bottom:24px;transform:translateX(-50%);background:var(--ink);color:var(--bg);padding:10px 16px;border-radius:10px;font-size:14px;z-index:100;box-shadow:0 8px 24px rgba(0,0,0,.2)}
+.fab{display:none}
+
+@media (max-width:760px){
+  .bar{flex-wrap:wrap;gap:6px}
+  .tabs{order:3;width:100%;margin:0}
+  .tabs button{flex:1;padding:7px 4px}
+  .axis{grid-template-columns:1fr}
+  .axis .lbl{display:none}
+  .quad{display:none;min-height:50vh}
+  .quad.mshow{display:flex}
+  .quad .list{max-height:none}
+  .qtabs{display:flex}
+  .two{grid-template-columns:1fr}
+  .quick input{flex-basis:100%;min-width:0}
+  .quick .btn.primary{margin-left:auto}
+  .hbar{grid-template-columns:110px 1fr 36px}
+}
+</style>
+</head>
+<body>
+
+<!-- ===== Setup koneksi Supabase ===== -->
+<section id="scr-setup" class="center hidden">
+  <div class="box">
+    <h1>Hubungkan Supabase</h1>
+    <p>Diisi sekali saja. Ambil dari Supabase → Project Settings → API.</p>
+    <label>Project URL</label>
+    <input type="text" id="cfg-url" placeholder="https://xxxx.supabase.co">
+    <label>Anon / publishable key</label>
+    <input type="text" id="cfg-key" placeholder="eyJhbGciOi…">
+    <div class="err" id="cfg-err"></div>
+    <button class="btn primary" style="width:100%;margin-top:8px" id="cfg-save">Simpan & lanjut</button>
+  </div>
+</section>
+
+<!-- ===== Login ===== -->
+<section id="scr-auth" class="center hidden">
+  <div class="box">
+    <h1>Prioritas</h1>
+    <p>To-do list dengan Matriks Eisenhower. Masuk untuk menyinkronkan tugas di semua perangkat.</p>
+    <label>Email</label>
+    <input type="email" id="au-email" autocomplete="email">
+    <label>Kata sandi</label>
+    <input type="password" id="au-pass" autocomplete="current-password">
+    <div class="err" id="au-err"></div>
+    <div class="row" style="margin-top:8px">
+      <button class="btn primary grow" id="au-in">Masuk</button>
+      <button class="btn grow" id="au-up">Daftar</button>
+    </div>
+    <div style="margin-top:14px;text-align:center"><button class="btn" style="border:0;font-size:13px;color:var(--muted)" id="au-reset">Ganti koneksi Supabase</button></div>
+  </div>
+</section>
+
+<!-- ===== Aplikasi ===== -->
+<section id="scr-app" class="hidden">
+  <header>
+    <div class="bar">
+      <div class="logo"><span class="dots"><i style="background:var(--q1)"></i><i style="background:var(--q2)"></i><i style="background:var(--q3)"></i><i style="background:var(--q4)"></i></span>Prioritas</div>
+      <nav class="tabs" id="tabs">
+        <button data-view="matrix" class="on">Matriks</button>
+        <button data-view="today">Hari Ini</button>
+        <button data-view="done">Selesai</button>
+        <button data-view="stats">Ringkasan</button>
+      </nav>
+      <div class="grow"></div>
+      <button class="icon-btn" id="btn-theme" title="Mode terang/gelap">☾</button>
+      <button class="icon-btn" id="btn-menu" title="Menu">⋯</button>
+    </div>
+    <div class="menu hidden" id="menu">
+      <div class="who" id="who"></div>
+      <button data-menu="csv">Ekspor ke CSV (buka di Sheets/Excel)</button>
+      <button data-menu="refresh">Muat ulang data</button>
+      <button data-menu="conn">Ganti koneksi Supabase</button>
+      <button data-menu="out">Keluar</button>
+    </div>
+  </header>
+
+  <main>
+    <form class="quick" id="quick" autocomplete="off">
+      <input id="q-title" placeholder="Tambah tugas… (Enter untuk simpan)" maxlength="300">
+      <button type="button" class="chip" id="q-imp">Penting</button>
+      <button type="button" class="chip" id="q-urg">Mendesak</button>
+      <span class="dest" id="q-dest"></span>
+      <button class="btn primary" type="submit">Tambah</button>
+    </form>
+
+    <div id="v-matrix">
+      <div class="inbox hidden" id="inbox">
+        <h3>Inbox · belum dinilai</h3>
+        <div class="stack" id="inbox-list"></div>
+      </div>
+      <div class="qtabs" id="qtabs"></div>
+      <div class="axis" id="axis">
+        <div></div><div class="lbl">Mendesak</div><div class="lbl">Tidak mendesak</div>
+        <div class="lbl vlbl">Penting</div>
+        <div class="quad" data-q="1"></div>
+        <div class="quad" data-q="2"></div>
+        <div class="lbl vlbl">Tidak penting</div>
+        <div class="quad" data-q="3"></div>
+        <div class="quad" data-q="4"></div>
+      </div>
+    </div>
+
+    <div id="v-today" class="hidden"></div>
+    <div id="v-done" class="hidden"></div>
+    <div id="v-stats" class="hidden"></div>
+  </main>
+</section>
+
+<!-- ===== Modal edit ===== -->
+<dialog id="dlg">
+  <form method="dialog" id="ed-form">
+    <div class="mh"><b id="ed-head">Edit tugas</b><div class="grow"></div><button class="icon-btn" value="cancel" formnovalidate>✕</button></div>
+    <div class="mb">
+      <label>Judul</label>
+      <input type="text" id="ed-title" required maxlength="300">
+      <label>Kuadran</label>
+      <select id="ed-q">
+        <option value="1">Q1 · Kerjakan Sekarang (penting, mendesak)</option>
+        <option value="2">Q2 · Jadwalkan (penting, tidak mendesak)</option>
+        <option value="3">Q3 · Delegasikan (tidak penting, mendesak)</option>
+        <option value="4">Q4 · Eliminasi (tidak penting, tidak mendesak)</option>
+        <option value="0">Inbox · belum dinilai</option>
+      </select>
+      <div class="two">
+        <div><label>Tenggat</label><input type="date" id="ed-due"></div>
+        <div><label>Berulang</label>
+          <select id="ed-rec">
+            <option value="">Tidak</option>
+            <option value="daily">Setiap hari</option>
+            <option value="weekly">Setiap minggu</option>
+            <option value="monthly">Setiap bulan</option>
+          </select></div>
+      </div>
+      <label>Tag (pisahkan dengan koma)</label>
+      <input type="text" id="ed-tags" placeholder="mis. Kantor, UKK, Pribadi">
+      <div class="deleg" id="ed-deleg">
+        <div class="two">
+          <div><label>Didelegasikan ke</label><input type="text" id="ed-who" placeholder="Nama orang"></div>
+          <div><label>Status tindak lanjut</label>
+            <select id="ed-dst">
+              <option value="">—</option>
+              <option>Belum dikirim</option>
+              <option>Sudah ditugaskan</option>
+              <option>Menunggu hasil</option>
+              <option>Beres</option>
+            </select></div>
+        </div>
+      </div>
+      <label>Catatan</label>
+      <textarea id="ed-notes"></textarea>
+      <label class="row" style="color:var(--ink);margin-top:12px"><input type="checkbox" id="ed-today"> Pilih untuk dikerjakan hari ini ★</label>
+    </div>
+    <div class="mf">
+      <button class="btn danger" type="button" id="ed-del">Hapus</button>
+      <div class="grow"></div>
+      <button class="btn" value="cancel" formnovalidate>Batal</button>
+      <button class="btn primary" value="save" id="ed-save">Simpan</button>
+    </div>
+  </form>
+</dialog>
+
+<div class="toast hidden" id="toast"></div>
+
+<script>
+/* =========================================================
+   PRIORITAS — logika aplikasi
+   ========================================================= */
+const $ = s => document.querySelector(s);
+const QS = {
+  0:{code:'IN', name:'Inbox',             sub:'Belum dinilai',                 c:'var(--q0)', s:'var(--q0s)'},
+  1:{code:'Q1', name:'Kerjakan Sekarang', sub:'Penting · Mendesak',            c:'var(--q1)', s:'var(--q1s)'},
+  2:{code:'Q2', name:'Jadwalkan',         sub:'Penting · Tidak mendesak',      c:'var(--q2)', s:'var(--q2s)'},
+  3:{code:'Q3', name:'Delegasikan',       sub:'Tidak penting · Mendesak',      c:'var(--q3)', s:'var(--q3s)'},
+  4:{code:'Q4', name:'Eliminasi',         sub:'Tidak penting · Tidak mendesak',c:'var(--q4)', s:'var(--q4s)'},
+};
+const REC = {daily:'Harian', weekly:'Mingguan', monthly:'Bulanan'};
+const CFG_KEY = 'prioritas_cfg', THEME_KEY = 'prioritas_theme';
+
+let sb = null, user = null, tasks = [], view = 'matrix', mobileQ = 1, editingId = null, channel = null;
+const add = {imp:false, urg:false, touched:false};
+
+/* ---------- utilitas ---------- */
+const ls = {
+  get(k){ try { return localStorage.getItem(k); } catch(e){ return null; } },
+  set(k,v){ try { localStorage.setItem(k,v); } catch(e){} },
+  del(k){ try { localStorage.removeItem(k); } catch(e){} },
+};
+const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const pad = n => String(n).padStart(2,'0');
+const ymd = d => `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}`;
+const todayStr = () => ymd(new Date());
+const parseD = s => { const [y,m,d] = s.split('-').map(Number); return new Date(y, m-1, d); };
+const daysUntil = s => Math.round((parseD(s) - parseD(todayStr())) / 864e5);
+const quadOf = (imp, urg) => imp && urg ? 1 : imp ? 2 : urg ? 3 : 4;
+const BULAN = ['Jan','Feb','Mar','Apr','Mei','Jun','Jul','Agu','Sep','Okt','Nov','Des'];
+const fmtDate = s => { const d = parseD(s); return `${d.getDate()} ${BULAN[d.getMonth()]}`; };
+function dueLabel(s){
+  const n = daysUntil(s);
+  if (n < 0)  return {t:`Terlambat ${-n} hr`, cls:'late'};
+  if (n === 0) return {t:'Hari ini', cls:'soon'};
+  if (n === 1) return {t:'Besok', cls:'soon'};
+  return {t:fmtDate(s), cls: n <= 2 ? 'soon' : ''};
+}
+function toast(msg){
+  const t = $('#toast'); t.textContent = msg; t.classList.remove('hidden');
+  clearTimeout(toast._t); toast._t = setTimeout(() => t.classList.add('hidden'), 2600);
+}
+function show(id){ ['#scr-setup','#scr-auth','#scr-app'].forEach(s => $(s).classList.toggle('hidden', s !== id)); }
+
+/* ---------- tema ---------- */
+function applyTheme(t){ document.documentElement.dataset.theme = t; ls.set(THEME_KEY, t); $('#btn-theme').textContent = t === 'dark' ? '☀' : '☾'; }
+applyTheme(ls.get(THEME_KEY) || (matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light'));
+$('#btn-theme').onclick = () => applyTheme(document.documentElement.dataset.theme === 'dark' ? 'light' : 'dark');
+
+/* ---------- koneksi & login ---------- */
+async function boot(){
+  let cfg = null;
+  try { cfg = JSON.parse(ls.get(CFG_KEY) || 'null'); } catch(e){}
+  if (!cfg || !cfg.url || !cfg.key){ show('#scr-setup'); return; }
+  try { sb = supabase.createClient(cfg.url, cfg.key); }
+  catch(e){ show('#scr-setup'); $('#cfg-err').textContent = 'Koneksi gagal: ' + e.message; return; }
+  sb.auth.onAuthStateChange((ev, session) => {
+    if (ev === 'SIGNED_OUT') { user = null; tasks = []; if (channel) sb.removeChannel(channel); show('#scr-auth'); }
+    else if (session && (!user || user.id !== session.user.id)) startApp(session.user);
+  });
+  const { data:{ session } } = await sb.auth.getSession();
+  if (session) startApp(session.user); else show('#scr-auth');
+}
+$('#cfg-save').onclick = () => {
+  const url = $('#cfg-url').value.trim().replace(/\/$/,''), key = $('#cfg-key').value.trim();
+  if (!/^https:\/\/.+/.test(url) || key.length < 20){ $('#cfg-err').textContent = 'Periksa lagi URL dan key-nya.'; return; }
+  ls.set(CFG_KEY, JSON.stringify({url, key})); $('#cfg-err').textContent = ''; boot();
+};
+function resetConn(){ if (!confirm('Hapus pengaturan koneksi Supabase di perangkat ini?')) return; ls.del(CFG_KEY); location.reload(); }
+$('#au-reset').onclick = resetConn;
+
+async function auth(kind){
+  const email = $('#au-email').value.trim(), password = $('#au-pass').value;
+  const err = $('#au-err'); err.textContent = '';
+  if (!email || password.length < 6){ err.textContent = 'Isi email dan kata sandi (min. 6 karakter).'; return; }
+  const fn = kind === 'in' ? sb.auth.signInWithPassword({email, password}) : sb.auth.signUp({email, password});
+  const { data, error } = await fn;
+  if (error){ err.textContent = error.message; return; }
+  if (kind === 'up' && !data.session) err.style.color = 'var(--muted)', err.textContent = 'Akun dibuat. Cek email untuk konfirmasi, lalu masuk.';
+}
+$('#au-in').onclick = () => auth('in');
+$('#au-up').onclick = () => auth('up');
+$('#au-pass').addEventListener('keydown', e => { if (e.key === 'Enter') auth('in'); });
+
+async function startApp(u){
+  user = u; show('#scr-app'); $('#who').textContent = u.email;
+  await loadTasks();
+  if (channel) sb.removeChannel(channel);
+  channel = sb.channel('tasks-' + u.id)
+    .on('postgres_changes', {event:'*', schema:'public', table:'tasks'}, p => {
+      if (p.eventType === 'DELETE') tasks = tasks.filter(t => t.id !== p.old.id);
+      else {
+        const i = tasks.findIndex(t => t.id === p.new.id);
+        if (i >= 0) tasks[i] = p.new; else tasks.push(p.new);
+      }
+      render();
+    }).subscribe();
+}
+async function loadTasks(){
+  const { data, error } = await sb.from('tasks').select('*').order('created_at');
+  if (error){ toast('Gagal memuat: ' + error.message); return; }
+  tasks = data; render();
+}
+
+/* ---------- operasi data ---------- */
+async function insertTask(obj){
+  const { data, error } = await sb.from('tasks').insert(obj).select().single();
+  if (error){ toast('Gagal menyimpan: ' + error.message); return null; }
+  if (!tasks.some(t => t.id === data.id)) tasks.push(data);
+  render(); return data;
+}
+async function updateTask(id, patch){
+  const t = tasks.find(x => x.id === id); if (!t) return;
+  const before = {...t};
+  Object.assign(t, patch, {updated_at:new Date().toISOString()}); render();
+  const { error } = await sb.from('tasks').update({...patch, updated_at:t.updated_at}).eq('id', id);
+  if (error){ Object.assign(t, before); render(); toast('Gagal memperbarui: ' + error.message); }
+}
+async function deleteTask(id){
+  const before = tasks; tasks = tasks.filter(t => t.id !== id); render();
+  const { error } = await sb.from('tasks').delete().eq('id', id);
+  if (error){ tasks = before; render(); toast('Gagal menghapus: ' + error.message); }
+}
+function nextDue(t){
+  const base = t.due_date || todayStr();
+  let d = parseD(base); const today = parseD(todayStr());
+  const step = () => {
+    if (t.recurrence === 'daily') d.setDate(d.getDate()+1);
+    else if (t.recurrence === 'weekly') d.setDate(d.getDate()+7);
+    else { const day = d.getDate(); d.setDate(1); d.setMonth(d.getMonth()+1); d.setDate(Math.min(day, new Date(d.getFullYear(), d.getMonth()+1, 0).getDate())); }
+  };
+  do step(); while (d < today);
+  return ymd(d);
+}
+async function toggleDone(id){
+  const t = tasks.find(x => x.id === id); if (!t) return;
+  if (t.done){ await updateTask(id, {done:false, done_at:null}); return; }
+  await updateTask(id, {done:true, done_at:new Date().toISOString(), today:false});
+  if (t.recurrence){
+    const due = nextDue(t);
+    await insertTask({title:t.title, notes:t.notes, quadrant:t.quadrant, tags:t.tags, assignee:t.assignee,
+      delegate_status: t.assignee ? 'Belum dikirim' : null, recurrence:t.recurrence, due_date:due});
+    toast(`Selesai ✓ — dijadwalkan lagi ${fmtDate(due)}`);
+  } else toast('Selesai ✓');
+}
+
+/* ---------- tambah cepat ---------- */
+function paintQuick(){
+  $('#q-imp').classList.toggle('on', add.imp);
+  $('#q-urg').classList.toggle('on', add.urg);
+  const q = add.touched ? quadOf(add.imp, add.urg) : 0, d = $('#q-dest');
+  d.textContent = '→ ' + (q ? `${QS[q].code} ${QS[q].name}` : 'Inbox');
+  d.style.background = QS[q].s; d.style.color = QS[q].c;
+}
+$('#q-imp').onclick = () => { add.imp = !add.imp; add.touched = true; paintQuick(); };
+$('#q-urg').onclick = () => { add.urg = !add.urg; add.touched = true; paintQuick(); };
+$('#quick').onsubmit = async e => {
+  e.preventDefault();
+  const title = $('#q-title').value.trim(); if (!title) return;
+  const q = add.touched ? quadOf(add.imp, add.urg) : 0;
+  $('#q-title').value = '';
+  Object.assign(add, {imp:false, urg:false, touched:false}); paintQuick();
+  await insertTask({title, quadrant:q});
+  if (q && innerWidth <= 760) { mobileQ = q; render(); }
+};
+paintQuick();
+
+/* ---------- render ---------- */
+const open = () => tasks.filter(t => !t.done);
+function sortOpen(a, b){
+  const ad = a.due_date || '9999', bd = b.due_date || '9999';
+  if (ad !== bd) return ad < bd ? -1 : 1;
+  return a.created_at < b.created_at ? -1 : 1;
+}
+function cardHTML(t, opts = {}){
+  const q = QS[t.quadrant];
+  const meta = [];
+  if (opts.showQ) meta.push(`<span class="b" style="color:${q.c}">${q.code}</span>`);
+  if (t.due_date){ const d = dueLabel(t.due_date); meta.push(`<span class="b ${t.done ? '' : d.cls}">📅 ${d.t}</span>`); }
+  if (!t.done && t.quadrant === 2 && t.due_date && daysUntil(t.due_date) <= 2)
+    meta.push(`<span class="b promo" data-act="promote" data-id="${t.id}" title="Tenggat sudah dekat">Naikkan ke Q1?</span>`);
+  if (t.recurrence) meta.push(`<span class="b">↻ ${REC[t.recurrence]}</span>`);
+  if (t.assignee) meta.push(`<span class="b">👤 ${esc(t.assignee)}${t.delegate_status ? ' · ' + esc(t.delegate_status) : ''}</span>`);
+  (t.tags || []).forEach(g => meta.push(`<span class="b">#${esc(g)}</span>`));
+  if (t.notes) meta.push(`<span class="b" title="${esc(t.notes)}">📝</span>`);
+  if (opts.doneAt && t.done_at) meta.push(`<span class="b">✓ ${new Date(t.done_at).toLocaleDateString('id-ID',{day:'numeric',month:'short'})}</span>`);
+  const sortBtns = opts.sort ? `<div class="sortbtns">${[1,2,3,4].map(n =>
+      `<button data-act="sort" data-id="${t.id}" data-q="${n}" style="background:${QS[n].c}" title="${QS[n].name}">${QS[n].code}</button>`).join('')}</div>` : '';
+  const right = opts.restore
+    ? `<button class="btn" style="padding:4px 10px;font-size:12px" data-act="restore" data-id="${t.id}">Pulihkan</button>`
+    : opts.sort ? sortBtns
+    : `<button class="star ${t.today ? 'on' : ''}" data-act="today" data-id="${t.id}" title="Kerjakan hari ini">${t.today ? '★' : '☆'}</button>`;
+  return `<div class="card ${t.done ? 'isdone' : ''}" style="--qc:${q.c};--qs:${q.s}" draggable="${!t.done}" data-id="${t.id}">
+    <button class="chk ${t.done ? 'on' : ''}" data-act="done" data-id="${t.id}" title="Tandai selesai">${t.done ? '✓' : ''}</button>
+    <div class="body" data-act="edit" data-id="${t.id}"><div class="t">${esc(t.title)}</div>${meta.length ? `<div class="meta">${meta.join('')}</div>` : ''}</div>
+    ${right}</div>`;
+}
+
+function render(){
+  document.querySelectorAll('#tabs button').forEach(b => b.classList.toggle('on', b.dataset.view === view));
+  ['matrix','today','done','stats'].forEach(v => $('#v-' + v).classList.toggle('hidden', v !== view));
+  $('#quick').classList.toggle('hidden', view === 'done' || view === 'stats');
+  if (view === 'matrix') renderMatrix();
+  if (view === 'today') renderToday();
+  if (view === 'done') renderDone();
+  if (view === 'stats') renderStats();
+}
+
+function renderMatrix(){
+  const o = open();
+  const inbox = o.filter(t => t.quadrant === 0).sort(sortOpen);
+  $('#inbox').classList.toggle('hidden', !inbox.length);
+  $('#inbox-list').innerHTML = inbox.map(t => cardHTML(t, {sort:true})).join('');
+  $('#qtabs').innerHTML = [1,2,3,4].map(n => {
+    const c = o.filter(t => t.quadrant === n).length;
+    return `<button class="${mobileQ === n ? 'on' : ''}" style="--qc:${QS[n].c}" data-mq="${n}">${QS[n].code} · ${c}</button>`;
+  }).join('');
+  document.querySelectorAll('.quad').forEach(el => {
+    const n = +el.dataset.q, q = QS[n];
+    const list = o.filter(t => t.quadrant === n).sort(sortOpen);
+    el.style.setProperty('--qc', q.c);
+    el.classList.toggle('mshow', mobileQ === n);
+    el.innerHTML = `<div class="qh"><span class="tag">${q.code}</span><b>${q.name}</b><small>${list.length} tugas</small></div>
+      <div class="list" data-drop="${n}">${list.length ? list.map(t => cardHTML(t)).join('')
+        : `<div class="empty">${n === 4 ? 'Bersih. Pertahankan!' : 'Seret tugas ke sini'}</div>`}</div>`;
+  });
+}
+
+function renderToday(){
+  const o = open();
+  const late  = o.filter(t => t.due_date && daysUntil(t.due_date) < 0).sort(sortOpen);
+  const q1    = o.filter(t => t.quadrant === 1 && !late.includes(t)).sort(sortOpen);
+  const dueT  = o.filter(t => t.due_date && daysUntil(t.due_date) === 0 && t.quadrant !== 1 && !late.includes(t)).sort(sortOpen);
+  const picked= o.filter(t => t.today && !late.includes(t) && !q1.includes(t) && !dueT.includes(t)).sort(sortOpen);
+  const q2n = o.filter(t => t.today && t.quadrant === 2).length;
+  const grp = (title, arr) => arr.length ? `<div class="grp">${title} · ${arr.length}</div><div class="stack">${arr.map(t => cardHTML(t, {showQ:true})).join('')}</div>` : '';
+  const total = late.length + q1.length + dueT.length + picked.length;
+  const d = new Date().toLocaleDateString('id-ID', {weekday:'long', day:'numeric', month:'long'});
+  $('#v-today').innerHTML = `<div class="section"><h2>Hari Ini — ${d}</h2>
+    <p class="hint">Semua tugas Q1, tugas bertenggat hari ini/terlambat, dan tugas yang Anda beri ★.
+    ${q2n === 0 ? 'Tip: pilih 1–3 tugas <b style="color:var(--q2)">Q2</b> (beri ★) supaya pekerjaan penting tidak terus tertunda.' : q2n > 3 ? `Anda memilih ${q2n} tugas Q2 — idealnya 1–3 agar realistis.` : `${q2n} tugas Q2 dipilih hari ini 👍`}</p>
+    ${total ? grp('Terlambat', late) + grp('Kerjakan sekarang (Q1)', q1) + grp('Tenggat hari ini', dueT) + grp('Dipilih untuk hari ini ★', picked)
+            : '<div class="empty">Tidak ada yang mendesak hari ini. Saatnya mengerjakan Q2. ✨</div>'}</div>`;
+}
+
+function renderDone(){
+  const d = tasks.filter(t => t.done).sort((a, b) => (b.done_at || '') < (a.done_at || '') ? -1 : 1);
+  $('#v-done').innerHTML = `<div class="section"><h2>Selesai</h2><p class="hint">${d.length} tugas. Centang ulang atau klik "Pulihkan" untuk mengembalikannya ke matriks.</p>
+    <div class="stack">${d.length ? d.map(t => cardHTML(t, {restore:true, showQ:true, doneAt:true})).join('') : '<div class="empty">Belum ada tugas selesai.</div>'}</div></div>`;
+}
+
+function renderStats(){
+  const since = Date.now() - 7 * 864e5;
+  const done7 = tasks.filter(t => t.done && t.done_at && new Date(t.done_at).getTime() >= since);
+  const o = open();
+  const late = o.filter(t => t.due_date && daysUntil(t.due_date) < 0).length;
+  const by = (arr, n) => arr.filter(t => t.quadrant === n).length;
+  const bars = (arr) => { const max = Math.max(1, ...[1,2,3,4].map(n => by(arr, n)));
+    return [1,2,3,4].map(n => `<div class="hbar"><span><b style="color:${QS[n].c}">${QS[n].code}</b> ${QS[n].name}</span>
+      <div class="track"><div class="fill" style="width:${by(arr, n) / max * 100}%;background:${QS[n].c}"></div></div><span class="v">${by(arr, n)}</span></div>`).join(''); };
+  const q2pct = done7.length ? Math.round(by(done7, 2) / done7.length * 100) : 0;
+  const q1pct = done7.length ? Math.round(by(done7, 1) / done7.length * 100) : 0;
+  const msg = !done7.length ? 'Belum ada tugas selesai dalam 7 hari terakhir.'
+    : q2pct >= 40 ? 'Bagus — porsi kerja strategis (Q2) Anda sehat.'
+    : q1pct >= 50 ? 'Banyak waktu habis untuk "memadamkan api" (Q1). Coba jadwalkan lebih banyak Q2 agar krisis berkurang.'
+    : 'Coba tambah porsi Q2 — pekerjaan penting yang belum mendesak.';
+  $('#v-stats').innerHTML = `<div class="section"><h2>Ringkasan 7 hari terakhir</h2><p class="hint">${msg}</p>
+    <div class="stats">
+      <div class="stat"><div class="n">${done7.length}</div><div class="l">tugas selesai</div></div>
+      <div class="stat"><div class="n" style="color:var(--q2)">${q2pct}%</div><div class="l">porsi Q2 (target ≥ 40%)</div></div>
+      <div class="stat"><div class="n">${o.length}</div><div class="l">tugas masih terbuka</div></div>
+      <div class="stat"><div class="n" style="color:${late ? 'var(--q1)' : 'inherit'}">${late}</div><div class="l">terlambat</div></div>
+    </div>
+    <div class="grp">Selesai per kuadran (7 hari)</div>${bars(done7)}
+    <div class="grp">Tugas terbuka per kuadran</div>${bars(o)}
+    ${by(o, 0) ? `<p class="hint" style="margin-top:10px">${by(o, 0)} tugas masih di Inbox, belum dinilai.</p>` : ''}</div>`;
+}
+
+/* ---------- interaksi ---------- */
+document.addEventListener('click', e => {
+  const tab = e.target.closest('[data-view]'); if (tab){ view = tab.dataset.view; render(); return; }
+  const mq = e.target.closest('[data-mq]'); if (mq){ mobileQ = +mq.dataset.mq; renderMatrix(); return; }
+  const el = e.target.closest('[data-act]'); if (!el) return;
+  const id = el.dataset.id, t = tasks.find(x => x.id === id);
+  switch (el.dataset.act){
+    case 'done': toggleDone(id); break;
+    case 'today': updateTask(id, {today:!t.today}); break;
+    case 'promote': updateTask(id, {quadrant:1}); toast('Dinaikkan ke Q1'); break;
+    case 'sort': updateTask(id, {quadrant:+el.dataset.q}); break;
+    case 'restore': updateTask(id, {done:false, done_at:null}); toast('Dipulihkan'); break;
+    case 'edit': openEdit(id); break;
+  }
+});
+
+/* seret & lepas antar-kuadran */
+document.addEventListener('dragstart', e => {
+  const c = e.target.closest('.card'); if (!c) return;
+  e.dataTransfer.setData('text/plain', c.dataset.id); e.dataTransfer.effectAllowed = 'move'; c.classList.add('dragging');
+});
+document.addEventListener('dragend', e => { e.target.closest?.('.card')?.classList.remove('dragging'); document.querySelectorAll('.quad.over').forEach(q => q.classList.remove('over')); });
+document.addEventListener('dragover', e => {
+  const q = e.target.closest('.quad'); if (!q) return;
+  e.preventDefault(); document.querySelectorAll('.quad.over').forEach(x => x !== q && x.classList.remove('over')); q.classList.add('over');
+});
+document.addEventListener('drop', e => {
+  const q = e.target.closest('.quad'); if (!q) return;
+  e.preventDefault(); q.classList.remove('over');
+  const id = e.dataTransfer.getData('text/plain'), n = +q.dataset.q, t = tasks.find(x => x.id === id);
+  if (t && t.quadrant !== n) updateTask(id, {quadrant:n});
+});
+
+/* menu */
+$('#btn-menu').onclick = e => { e.stopPropagation(); $('#menu').classList.toggle('hidden'); };
+document.addEventListener('click', e => { if (!e.target.closest('#menu')) $('#menu').classList.add('hidden'); });
+$('#menu').onclick = async e => {
+  const a = e.target.closest('[data-menu]')?.dataset.menu; if (!a) return;
+  $('#menu').classList.add('hidden');
+  if (a === 'csv') exportCSV();
+  if (a === 'refresh') { await loadTasks(); toast('Data dimuat ulang'); }
+  if (a === 'conn') resetConn();
+  if (a === 'out') { await sb.auth.signOut(); }
+};
+
+/* modal edit */
+function syncDeleg(){ $('#ed-deleg').classList.toggle('hidden', $('#ed-q').value !== '3' && !$('#ed-who').value); }
+$('#ed-q').onchange = syncDeleg;
+function openEdit(id){
+  const t = tasks.find(x => x.id === id); if (!t) return;
+  editingId = id;
+  $('#ed-head').textContent = t.done ? 'Tugas selesai' : 'Edit tugas';
+  $('#ed-title').value = t.title; $('#ed-q').value = String(t.quadrant);
+  $('#ed-due').value = t.due_date || ''; $('#ed-rec').value = t.recurrence || '';
+  $('#ed-tags').value = (t.tags || []).join(', ');
+  $('#ed-who').value = t.assignee || ''; $('#ed-dst').value = t.delegate_status || '';
+  $('#ed-notes').value = t.notes || ''; $('#ed-today').checked = !!t.today;
+  syncDeleg(); $('#dlg').showModal();
+}
+$('#dlg').addEventListener('close', () => {
+  if ($('#dlg').returnValue !== 'save' || !editingId) { editingId = null; return; }
+  const title = $('#ed-title').value.trim(); if (!title) return;
+  const tags = $('#ed-tags').value.split(',').map(s => s.trim().replace(/^#/, '')).filter(Boolean);
+  updateTask(editingId, {
+    title, quadrant:+$('#ed-q').value, due_date:$('#ed-due').value || null, recurrence:$('#ed-rec').value || null,
+    tags, assignee:$('#ed-who').value.trim() || null, delegate_status:$('#ed-dst').value || null,
+    notes:$('#ed-notes').value.trim() || null, today:$('#ed-today').checked,
+  });
+  editingId = null;
+});
+$('#ed-del').onclick = () => {
+  if (!editingId || !confirm('Hapus tugas ini secara permanen?')) return;
+  const id = editingId; editingId = null; $('#dlg').close(); deleteTask(id); toast('Tugas dihapus');
+};
+
+/* ekspor CSV */
+function exportCSV(){
+  const cols = ['title','quadrant','status','due_date','tags','assignee','delegate_status','recurrence','notes','created_at','done_at'];
+  const cell = v => `"${String(v ?? '').replace(/"/g, '""')}"`;
+  const rows = tasks.map(t => [t.title, `${QS[t.quadrant].code} ${QS[t.quadrant].name}`, t.done ? 'Selesai' : 'Terbuka', t.due_date,
+    (t.tags || []).join(', '), t.assignee, t.delegate_status, t.recurrence ? REC[t.recurrence] : '', t.notes, t.created_at, t.done_at].map(cell).join(','));
+  const csv = '﻿' + ['Judul','Kuadran','Status','Tenggat','Tag','Didelegasikan ke','Status delegasi','Berulang','Catatan','Dibuat','Selesai'].map(cell).join(',') + '\n' + rows.join('\n');
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(new Blob([csv], {type:'text/csv;charset=utf-8'}));
+  a.download = `prioritas-${todayStr()}.csv`; a.click(); URL.revokeObjectURL(a.href);
+}
+
+/* pergantian hari (aplikasi dibiarkan terbuka) */
+let lastDay = todayStr();
+setInterval(() => { if (todayStr() !== lastDay){ lastDay = todayStr(); if (user) render(); } }, 60000);
+
+boot();
+</script>
+</body>
+</html>
